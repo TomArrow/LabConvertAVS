@@ -26,3 +26,23 @@ public:
     PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment* env);
     const VideoInfo& __stdcall GetVideoInfo() { return viOut; }
 };
+
+
+// Oklab variants
+class ConvertToOkLChab : public GenericVideoFilter {
+    inline void PixelFromSRGBToOkLChab(float& r, float& g, float& b, float& l, float& c, float& hab);
+    VideoInfo viOut;
+public:
+    ConvertToOkLChab(PClip _child, IScriptEnvironment* env);
+    PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment* env);
+    const VideoInfo& __stdcall GetVideoInfo() { return viOut; }
+};
+
+class ConvertFromOkLChab : public GenericVideoFilter {
+    inline void PixelFromOkLChabToSRGB(float& l, float& c, float& hab, float& r, float& g, float& b);
+    VideoInfo viOut;
+public:
+    ConvertFromOkLChab(PClip _child, IScriptEnvironment* env);
+    PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment* env);
+    const VideoInfo& __stdcall GetVideoInfo() { return viOut; }
+};

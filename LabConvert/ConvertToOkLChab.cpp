@@ -1,35 +1,31 @@
 #include "LabConvert.h"
 #include <cmath>
 
-// Most of the LAB color conversion code is lifted and adapted from ColorMinePortable
+// The color conversion code/logic is lifted and adapted from https://bottosson.github.io/posts/oklab/
 
-inline float ConvertToLChab::PivotXyz(float n)
-{
-    return n > Epsilon ? std::cbrtf(n) : (Kappa * n + 16.0f) / 116.0f;
-}
+// 
+// We are going straight from linear sRGB to cone response 
+// But for reference, here is the normal XYZ to cone response matrix:
+//  M 1  = (   +0.8189330101 +0.0329845436 +0.0482003018   +0.3618667424 +0.9293118715 +0.2643662691   -0.1288597137 +0.0361456387 +0.6338517070   ) 
+//
+inline void ConvertToOkLChab::PixelFromSRGBToOkLChab(float& r, float& g, float& b, float& l, float& c, float& hab) {
 
-inline void ConvertToLChab::PixelFromSRGBToLChab(float& r, float& g, float& b, float& l, float& c, float& hab) {
-
-    float x, y, z;
+    float l0, m, s;
     float L, A, B;
-    //sRGBToXYZ
-    // sRGB to XYZ matrix:
-    // 
-    // 0.4124564  0.3575761  0.1804375
-    // 0.2126729  0.7151522  0.0721750
-    // 0.0193339  0.1191920  0.9503041
-    //
-    x = r * 0.4124564f + g * 0.3575761f + b * 0.1804375f;
-    y = r * 0.2126729f + g * 0.7151522f + b * 0.0721750f;
-    z = r * 0.0193339f + g * 0.1191920f + b * 0.9503041f;
+    // sRGB straight to cone response:
+    l0 = 0.4122214708f * r + 0.5363325363f * g + 0.0514459929f * b;
+    m = 0.2119034982f * r + 0.6806995451f * g + 0.1073969566f * b;
+    s = 0.0883024619f * r + 0.2817188376f * g + 0.6299787005f * b;
+
+    // Cubic roots
+    l0 = std::cbrtf(l0);
+    m = std::cbrtf(m);
+    s = std::cbrtf(s);
 
     // XYZ to LAB
-    x = PivotXyz(x / WhiteReference[0]);
-    y = PivotXyz(y / WhiteReference[1]);
-    z = PivotXyz(z / WhiteReference[2]);
-    L = 116.0f * y - 16.0f;
-    A = 500.0f * (x - y);
-    B = 200.0f * (y - z);
+    L = 0.2104542553f * l0 + 0.7936177850f * m - 0.0040720468f * s;
+    A = 1.9779984951f * l0 - 2.4285922050f * m + 0.4505937099f * s;
+    B = 0.0259040371f * l0 + 0.7827717662f * m - 0.8086757660f * s;
 
     l = L;
     //c = std::sqrtf(std::powf(A, 2) + std::powf(B, 2));
@@ -38,10 +34,10 @@ inline void ConvertToLChab::PixelFromSRGBToLChab(float& r, float& g, float& b, f
 }
 
 
-ConvertToLChab::ConvertToLChab(PClip _child, IScriptEnvironment* env) :
+ConvertToOkLChab::ConvertToOkLChab(PClip _child, IScriptEnvironment* env) :
     GenericVideoFilter(_child) {
     if (!vi.IsPlanar() || !vi.IsRGB() || vi.BitsPerComponent() != 32) {
-        env->ThrowError("ConvertToLChab: 32 bit float RGBPS only!");
+        env->ThrowError("ConvertToOkLChab: 32 bit float RGBPS only!");
     }
 
     // Create output VideoInfo
@@ -59,7 +55,7 @@ ConvertToLChab::ConvertToLChab(PClip _child, IScriptEnvironment* env) :
 }
 
 
-PVideoFrame __stdcall ConvertToLChab::GetFrame(int n, IScriptEnvironment* env) {
+PVideoFrame __stdcall ConvertToOkLChab::GetFrame(int n, IScriptEnvironment* env) {
 
     PVideoFrame src = child->GetFrame(n, env);
 
@@ -103,7 +99,7 @@ PVideoFrame __stdcall ConvertToLChab::GetFrame(int n, IScriptEnvironment* env) {
 
         for (int x = 0; x < rowSize0; x++) {
 
-            PixelFromSRGBToLChab(srcpLocal[0][x], srcpLocal[1][x], srcpLocal[2][x], dstpLocal[0][x], dstpLocal[1][x], dstpLocal[2][x]);
+            PixelFromSRGBToOkLChab(srcpLocal[0][x], srcpLocal[1][x], srcpLocal[2][x], dstpLocal[0][x], dstpLocal[1][x], dstpLocal[2][x]);
         }
 
     }

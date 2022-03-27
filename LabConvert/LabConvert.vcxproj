@@ -20,7 +20,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ConvertFromLChab.cpp" />
+    <ClCompile Include="ConvertFromOkLChab.cpp" />
     <ClCompile Include="ConvertToLChab.cpp" />
+    <ClCompile Include="ConvertToOkLChab.cpp" />
     <ClCompile Include="LabConvert.cpp" />
   </ItemGroup>
   <ItemGroup>

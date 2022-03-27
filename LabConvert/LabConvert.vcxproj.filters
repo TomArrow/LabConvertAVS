@@ -24,6 +24,12 @@
     <ClCompile Include="ConvertFromLChab.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ConvertToOkLChab.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConvertFromOkLChab.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="avs\avisynth.h">

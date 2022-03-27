@@ -1,13 +1,12 @@
 #include "LabConvert.h"
 #include <cmath>
 
-// Most of the LAB color conversion code is lifted and adapted from ColorMinePortable
+// The color conversion code/logic is lifted and adapted from https://bottosson.github.io/posts/oklab/
 
-inline void ConvertFromLChab::PixelFromLChabToSRGB(float& l, float& c, float& hab, float& r, float& g, float& b) {
+inline void ConvertFromOkLChab::PixelFromOkLChabToSRGB(float& l, float& c, float& hab, float& r, float& g, float& b) {
 
     float L, A, B;
-    float x, y, z;
-    float x2, y2, z2;
+    float l0, m, s;
 
     // LChab to LAB
     L = l;
@@ -15,32 +14,25 @@ inline void ConvertFromLChab::PixelFromLChabToSRGB(float& l, float& c, float& ha
     B = c * std::sinf(hab);
 
     // LAB to XYZ
-    y = (L + 16.0f) / 116.0f;
-    x = A / 500.0f + y;
-    z = y - B / 200.0f;
-    float x3 = x * x * x;
-    float z3 = z * z * z;
-    x2 = WhiteReference[0] * (x3 > Epsilon ? x3 : (x - 16.0f / 116.0f) / 7.787f);
-    y2 = WhiteReference[1] * (L > (Kappa * Epsilon) ? std::powf(((L + 16.0f) / 116.0f), 3.0f) : L / Kappa);
-    z2 = WhiteReference[2] * (z3 > Epsilon ? z3 : (z - 16.0f / 116.0f) / 7.787f);
+    l0 = L + 0.3963377774f * A + 0.2158037573f * B;
+    m = L - 0.1055613458f * A - 0.0638541728f * B;
+    s = L - 0.0894841775f * A - 1.2914855480f * B;
 
-    //
-    // XYZ to sRGB matrix:
-    // 
-    // 3.2404542 -1.5371385 -0.4985314
-    // -0.9692660  1.8760108  0.0415560
-    // 0.0556434 - 0.2040259  1.0572252
-    //
-    r = x2 * 3.2404542f + y2 * -1.5371385f + z2 * -0.4985314f;
-    g = x2 * -0.9692660f + y2 * 1.8760108f + z2 * 0.0415560f;
-    b = x2 * 0.0556434f + y2 * -0.2040259f + z2 * 1.0572252f;
+    l0 = l0 * l0 * l0;
+    m = m * m * m;
+    s = s * s * s;
+
+    r = +4.0767416621f * l0 - 3.3077115913f * m + 0.2309699292f * s;
+    g = -1.2684380046f * l0 + 2.6097574011f * m - 0.3413193965f * s;
+    b = -0.0041960863f * l0 - 0.7034186147f * m + 1.7076147010f * s;
+
 }
 
 
-ConvertFromLChab::ConvertFromLChab(PClip _child, IScriptEnvironment* env) :
+ConvertFromOkLChab::ConvertFromOkLChab(PClip _child, IScriptEnvironment* env) :
     GenericVideoFilter(_child) {
     if (!vi.IsPlanar() || !vi.IsYUV() || vi.BitsPerComponent() != 32) {
-        env->ThrowError("ConvertFromLChab: 32 bit float YUV444PS only!");
+        env->ThrowError("ConvertFromOkLChab: 32 bit float YUV444PS only!");
     }
 
     // Create output VideoInfo
@@ -58,7 +50,7 @@ ConvertFromLChab::ConvertFromLChab(PClip _child, IScriptEnvironment* env) :
 }
 
 
-PVideoFrame __stdcall ConvertFromLChab::GetFrame(int n, IScriptEnvironment* env) {
+PVideoFrame __stdcall ConvertFromOkLChab::GetFrame(int n, IScriptEnvironment* env) {
 
     PVideoFrame src = child->GetFrame(n, env);
 
@@ -102,7 +94,7 @@ PVideoFrame __stdcall ConvertFromLChab::GetFrame(int n, IScriptEnvironment* env)
 
         for (int x = 0; x < rowSize0; x++) {
 
-            PixelFromLChabToSRGB(srcpLocal[0][x], srcpLocal[1][x], srcpLocal[2][x], dstpLocal[0][x], dstpLocal[1][x], dstpLocal[2][x]);
+            PixelFromOkLChabToSRGB(srcpLocal[0][x], srcpLocal[1][x], srcpLocal[2][x], dstpLocal[0][x], dstpLocal[1][x], dstpLocal[2][x]);
         }
 
     }

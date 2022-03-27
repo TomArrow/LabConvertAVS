@@ -1,7 +1,7 @@
 #include "LabConvert.h"
 
 
-// Most of the LAB color conversion code is lifted and adapted from ColorMinePortable
+
 
 
 // sRGB to XYZ matrix:
@@ -29,11 +29,23 @@ AVSValue __cdecl Create_ConvertFromLChab(AVSValue args, void* user_data, IScript
     return new ConvertFromLChab(args[0].AsClip(), env);
 }
 
+AVSValue __cdecl Create_ConvertToOkLChab(AVSValue args, void* user_data, IScriptEnvironment* env) {
+
+    return new ConvertToOkLChab(args[0].AsClip(), env);
+}
+
+AVSValue __cdecl Create_ConvertFromOkLChab(AVSValue args, void* user_data, IScriptEnvironment* env) {
+
+    return new ConvertFromOkLChab(args[0].AsClip(), env);
+}
+
 const AVS_Linkage* AVS_linkage = 0;
 
 extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit3(IScriptEnvironment * env, const AVS_Linkage* const vectors) {
     AVS_linkage = vectors;
     env->AddFunction("ConvertToLChab", "c", Create_ConvertToLChab, 0);
     env->AddFunction("ConvertFromLChab", "c", Create_ConvertFromLChab, 0);
+    env->AddFunction("ConvertToOkLChab", "c", Create_ConvertToOkLChab, 0);
+    env->AddFunction("ConvertFromOkLChab", "c", Create_ConvertFromOkLChab, 0);
     return "Color matrix transform";
 }
